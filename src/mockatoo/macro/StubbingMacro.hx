@@ -8,9 +8,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import mockatoo.exception.StubbingException;
 
-using tink.macro.tools.Printer;
-using tink.macro.tools.ExprTools;
-using tink.macro.tools.TypeTools;
+using tink.MacroApi;
 
 /**
 Macro for remapping a mock's method invocation when using Mockatoo.when()
@@ -19,7 +17,7 @@ class StubbingMacro
 {
 	public static function createWhen(expr:Expr):Expr
 	{
-		var str = expr.print();
+		var str = expr.toString();
 		Console.log(str);
 		Console.log(expr);
 
@@ -70,7 +68,7 @@ class StubbingMacro
 				// Console.log(actualExpr.toString());
 				return actualExpr;
 
-			default: throw "Invalid expression [" + expr.print() + "]";
+			default: throw "Invalid expression [" + expr.toString() + "]";
 		}
 		return expr;
 	}
@@ -139,7 +137,7 @@ class StubbingMacro
 		exprs.push(actualExpr);
 
 		var ret = EBlock(exprs).at();
-		Console.log(Printer.print(ret));
+		Console.log(ret.toString());
 
 		return ret;
 	}

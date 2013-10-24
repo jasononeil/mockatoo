@@ -7,8 +7,7 @@ import haxe.macro.Context;
 import haxe.macro.Compiler;
 import haxe.macro.Type;
 import haxe.PosInfos;
-import tink.macro.tools.TypeTools;
-import tink.macro.tools.Printer;
+using tink.MacroApi;
 
 #if haxe3
 import haxe.ds.StringMap;
@@ -16,9 +15,6 @@ import haxe.ds.StringMap;
 typedef StringMap<T> = Hash<T>
 #end
 
-using tink.macro.tools.MacroTools;
-using tink.macro.tools.ExprTools;
-using tink.macro.tools.TypeTools;
 using mockatoo.macro.Types;
 using haxe.macro.Tools;
 
@@ -33,9 +29,6 @@ Macro for recursively converting ClassFields to Field types
 */
 class ClassFields
 {
-
-	@:extern static inline var PRETTY = true;
-
 	/**
 	Recursively aggregates fields from class and super classes, ensuring that
 	inherited/overriden fields take precidence.
@@ -233,12 +226,12 @@ class ClassFields
 				#if haxe3
 				var param = TPType(t.toComplexType());
 				#else
-				var param = TPType(t.toComplex(true));
+				var param = TPType(t.toComplex());
 				#end
 				
 				return TPath({pack:[], name:"StdTypes", sub:"Dynamic", params:[param]});
 			default:
-				return type.toComplex(PRETTY);
+				return type.toComplex();
 		}
 	}
 
@@ -297,7 +290,7 @@ class ClassFields
 			#if haxe3
 			var value:Null<Expr> = arg.opt ? arg.t.toComplexType().defaultValue() : null;
 			#else
-			var value:Null<Expr> = arg.opt ? arg.t.toComplex(true).defaultValue() : null;
+			var value:Null<Expr> = arg.opt ? arg.t.toComplex().defaultValue() : null;
 			#end
 
 			if(arg.opt && Contexts.isStaticPlatform())

@@ -5,12 +5,7 @@ import haxe.macro.Compiler;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
-import tink.macro.tools.MacroTools;
-import tink.macro.tools.Printer;
-import tink.macro.tools.ExprTools;
-import tink.macro.tools.TypeTools;
-import tink.macro.tools.FunctionTools;
-import tink.core.types.Outcome;
+import haxe.macro.Printer;
 import mockatoo.Mock;
 import mockatoo.macro.ClassFields;
 import mockatoo.internal.MockOutcome;
@@ -26,11 +21,7 @@ typedef TypeParamDecl = {
 }
 #end
 
-using tink.macro.tools.Printer;
-using tink.macro.tools.ExprTools;
-using tink.macro.tools.TypeTools;
-using tink.core.types.Outcome;
-
+using tink.MacroApi;
 using mockatoo.macro.Types;
 using haxe.macro.Tools;
 
@@ -102,12 +93,11 @@ class MockMaker
 
 					for(value in values)
 					{
-						var ident = Printer.print(value);
+						var ident = new Printer().printExpr(value);
 						Console.log("  param: " + ident);
 						params.push(Context.getType(ident));
 					}
-
-				default: throw "invalid param [" + Printer.print(paramTypes) + "]";
+				default: throw "invalid param [" + new Printer().printExpr(paramTypes) + "]";
 			}
 		}
 
@@ -130,12 +120,12 @@ class MockMaker
 	{
 		if(generatedExpr == null)
 		{
-			var typeParams = untyped TypeTools.paramsToComplex(params);
+			var typeParams = params.paramsToComplex();
 			var eIsSpy = EConst(CIdent(Std.string(isSpy))).at();
-			generatedExpr = ExprTools.instantiate(typeDefinitionId, [eIsSpy], typeParams, pos);
+			generatedExpr = typeDefinitionId.instantiate([eIsSpy], typeParams, pos);
 		}
 
-		Console.log(Printer.print(generatedExpr));
+		Console.log(new Printer().printExpr(generatedExpr));
 		return generatedExpr;	
 	}
 
@@ -176,11 +166,10 @@ class MockMaker
 
 					for(a in functionArgs)
 					{
-
-						fargs.push(FunctionTools.toArg(a.name, toComplexType(a.t) ,a.opt));
+						fargs.push(a.name.toArg(toComplexType(a.t) ,a.opt));
 					}
 
-					var f = FunctionTools.func(e, fargs, toComplexType(ret), [], true);
+					var f = e.func(fargs, toComplexType(ret), [], true);
 					arg.expr = EFunction(null, f).at();
 
 				default: throw "Unsupported type [" + field.type + "] for field [" + field.name + "]";
@@ -283,7 +272,7 @@ class MockMaker
 						case ClassKind.KTypeParameter(constrnts):
 							for(const in constrnts)
 							{
-								var complexParam = const.toComplex(true);
+								var complexParam = const.toComplex();
 								constraints.push(complexParam);
 							}
 						#else
@@ -323,7 +312,7 @@ class MockMaker
 
 		Console.log(typeParams);
 
-		extendTypePath = TypeTools.asTypePath(extendId, typeParams);
+		extendTypePath = extendId.asTypePath(typeParams);
 
 		Console.log(extendTypePath);
 
@@ -442,7 +431,7 @@ class MockMaker
 				preview += "@" + meta.name;
  
 				if(meta.params.length > 0)
-					preview += Printer.printExprList("",meta.params, ",");
+					preview += new Printer().printExprList("",meta.params, ",");
  
 				preview += "\n";
 				break;
@@ -459,10 +448,10 @@ class MockMaker
 				preview += "\n	@" + meta.name;
 
 				if(meta.params.length > 0)
-					preview += Printer.printExprList("",meta.params, ",");
+					preview += new Printer().printExprList("",meta.params, ",");
 			}
 
-			preview += "\n	" + Printer.printField("	", field);
+			preview += "\n	" + new Printer().printField("	", field);
 		}
 		preview += "\n}";
 
@@ -478,7 +467,7 @@ class MockMaker
 
 		for(meta in source)
 		{
-			Console.log(meta.name + ":" + Printer.printExprList("", meta.params));
+			Console.log(meta.name + ":" + new Printer().printExprs(meta.params,""));
 
 			switch(meta.name)
 			{
@@ -499,7 +488,7 @@ class MockMaker
 	*/
 	function createKind()
 	{
-		var mockInterface = TypeTools.asTypePath("mockatoo.Mock");
+		var mockInterface = "mockatoo.Mock".asTypePath();
 
 		var extension:TypePath = null;
 		var interfaces:Array<TypePath> = null;
@@ -786,7 +775,7 @@ class MockMaker
 
 		//deliberately call return before call to super
 		//to prevent target class constructor being executed
-		f.expr = ExprTools.toBlock([eMockConstructorExprs,eReturn, e]);
+		f.expr = [eMockConstructorExprs,eReturn, e].toBlock();
 	}
 
 	function createMockConstructorExprs()
@@ -1059,7 +1048,7 @@ class MockMaker
 	function createBlock(?args:Array<Expr>=null):Expr
 	{
 		if(args == null) args = [];
-		var exprs = ExprTools.toBlock(args);
+		var exprs = args.toBlock();
 		return exprs;
 	}
 
@@ -1069,7 +1058,7 @@ class MockMaker
 	function createEmptyConstructor():Field
 	{	
 		var constructorExprs = createMockConstructorExprs();
-		var exprs = ExprTools.toBlock([constructorExprs]);
+		var exprs = [constructorExprs].toBlock();
 
 
 		var arg = {
@@ -1079,7 +1068,7 @@ class MockMaker
 			name:"spy"
 		}
 
-		var f:Function = FunctionTools.func(exprs, [arg], null, null, false);
+		var f:Function = exprs.func([arg], null, null, false);
 		return 
 		{
 			pos:Context.currentPos(),
